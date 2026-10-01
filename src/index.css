@@ -78,3 +78,7 @@ button:disabled { cursor: not-allowed; }
   .card { border-radius:10px; }
   .brand-block { padding-top:18px; }
 }
+
+/* Notificações */
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.toast-in { animation: toast-in .18s ease-out; }

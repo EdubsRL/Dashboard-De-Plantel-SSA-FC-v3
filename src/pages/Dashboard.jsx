@@ -12,6 +12,7 @@ import {
   Cell,
 } from 'recharts'
 import { POSITIONS, RATINGS, STATUSES, FEET } from '../constants/positions'
+import PageLoader from '../components/feedback/PageLoader'
 
 const COLORS = ['#ff5a00', '#ff7a33', '#ff965f', '#ffb38a', '#e64f00', '#b83f00', '#7f2c00', '#ffcfb8', '#ff6b1a']
 const STATUS_HEX = { 'No clube': '#ff5a00', 'Em avaliação': '#f59e0b', Lesionado: '#ef4444' }
@@ -43,7 +44,18 @@ export default function Dashboard() {
     return { byPos, byFoot, byRating, byStatus, latest, registered }
   }, [players])
 
-  if (loading) return <p className="text-gray-400">Carregando dashboard...</p>
+  // Enquanto carrega pela primeira vez, mostra esqueleto em vez de zeros.
+  if (loading && !players.length) return <PageLoader label="Carregando dashboard..." />
+
+  // Sem dados por falha de conexão: não exibimos "0 atletas" para não
+  // dar a impressão de que o plantel foi apagado (o aviso aparece no topo).
+  if (error && !players.length) {
+    return (
+      <div className="card p-8 text-center text-gray-400">
+        Os dados do plantel aparecerão aqui assim que a conexão for restabelecida.
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -56,11 +68,6 @@ export default function Dashboard() {
         <div className="rounded-xl border border-graphite-800 bg-graphite-900 p-2.5 sm:p-3">
           <img src="/ssa-fc-logo.png" alt="SSA FC" className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg" />
         </div>
-        {error && (
-          <p className="mt-2 text-amber-400 text-sm">
-            Aviso: {error}. Verifique a conexão com o Supabase para sincronizar os dados.
-          </p>
-        )}
       </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">

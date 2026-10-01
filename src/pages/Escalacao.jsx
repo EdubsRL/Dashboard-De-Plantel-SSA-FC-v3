@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { notify, confirmDialog } from '../lib/notify'
 import {
   DndContext,
   DragOverlay,
@@ -290,7 +291,7 @@ export default function Escalacao() {
      * - Inscrito
      */
     if (!canPlayOfficially(player)) {
-      alert(
+      notify.warning(
         `${player.name} não pode participar da escalação oficial.\n\n`
         +
         `Situação: ${
@@ -352,7 +353,7 @@ export default function Escalacao() {
       playersById[playerId]
 
     if (!canPlayOfficially(player)) {
-      alert(
+      notify.warning(
         `${player?.name || 'Este atleta'} não está elegível para a escalação oficial.`
       )
 
@@ -405,7 +406,7 @@ export default function Escalacao() {
     }
 
     if (!canPlayOfficially(player)) {
-      alert(
+      notify.warning(
         `${player.name} não está disponível para a escalação oficial.\n\n`
         +
         `Somente atletas "No clube" e "Inscritos" podem ser escalados.`
@@ -456,7 +457,7 @@ export default function Escalacao() {
     slotKey
   ) => {
     if (!selectedPlayerId) {
-      alert(
+      notify.warning(
         'Primeiro selecione um atleta e depois toque em "+ reserva".'
       )
 
@@ -572,7 +573,7 @@ export default function Escalacao() {
         error
       )
 
-      alert(
+      notify.error(
         error?.message ||
           'Erro ao criar escalação.'
       )
@@ -586,7 +587,7 @@ export default function Escalacao() {
    */
   const handleSave = async () => {
     if (!name.trim()) {
-      alert(
+      notify.warning(
         'Informe um nome para a escalação.'
       )
 
@@ -648,7 +649,7 @@ export default function Escalacao() {
         invalidPlayers.length >
         0
       ) {
-        alert(
+        notify.warning(
           'Existem atletas não inscritos, lesionados ou fora do clube na escalação. Remova-os antes de salvar.'
         )
 
@@ -698,7 +699,7 @@ export default function Escalacao() {
         slots
       )
 
-      alert(
+      notify.success(
         'Escalação salva com sucesso.'
       )
     } catch (error) {
@@ -707,7 +708,7 @@ export default function Escalacao() {
         error
       )
 
-      alert(
+      notify.error(
         error?.message ||
           'Erro ao salvar escalação.'
       )
@@ -732,11 +733,11 @@ export default function Escalacao() {
         }
       )
 
-      alert(
+      notify.success(
         'Escalação definida como principal.'
       )
     } catch (error) {
-      alert(
+      notify.error(
         error?.message ||
           'Erro ao definir escalação principal.'
       )
@@ -966,7 +967,7 @@ export default function Escalacao() {
                 } catch (
                   error
                 ) {
-                  alert(
+                  notify.error(
                     error?.message ||
                       'Erro ao carregar escalação.'
                   )
@@ -1081,8 +1082,9 @@ export default function Escalacao() {
                 className="btn-danger min-h-11 w-full"
                 onClick={async () => {
                   const confirmed =
-                    window.confirm(
-                      'Excluir esta escalação?'
+                    await confirmDialog(
+                      `Excluir a escalação "${currentLineup.name}"?\n\nEssa ação não poderá ser desfeita.`,
+                      { title: 'Excluir escalação', confirmLabel: 'Excluir' }
                     )
 
                   if (!confirmed) {
@@ -1096,7 +1098,7 @@ export default function Escalacao() {
                   } catch (
                     error
                   ) {
-                    alert(
+                    notify.error(
                       error?.message ||
                         'Erro ao excluir escalação.'
                     )

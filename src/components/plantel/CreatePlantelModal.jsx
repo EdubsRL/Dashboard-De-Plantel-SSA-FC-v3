@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { confirmDialog } from '../../lib/notify'
 
 import {
   X,
@@ -115,10 +116,11 @@ export default function CreatePlantelModal({
     }
 
     const confirmed =
-      window.confirm(
+      await confirmDialog(
         `Excluir o plantel "${initialPlantel.name}"?\n\n` +
         `Essa operação remove o plantel e pode afetar os dados vinculados a ele.\n\n` +
-        `Essa ação não poderá ser desfeita.`
+        `Essa ação não poderá ser desfeita.`,
+        { title: 'Excluir plantel', confirmLabel: 'Excluir plantel' }
       )
 
     if (!confirmed) {

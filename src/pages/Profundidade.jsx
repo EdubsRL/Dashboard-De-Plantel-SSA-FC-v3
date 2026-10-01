@@ -3,6 +3,7 @@ import { usePlayers } from '../context/PlayersContext'
 import { buildDepthChart, positionsWithLowDepth } from '../utils/depth'
 import { POSITIONS } from '../constants/positions'
 import { AlertTriangle } from 'lucide-react'
+import PageLoader from '../components/feedback/PageLoader'
 
 const statusColor = {
   'No clube': 'text-pitch-400',
@@ -15,7 +16,7 @@ export default function Profundidade() {
   const depth = useMemo(() => buildDepthChart(players), [players])
   const low = useMemo(() => positionsWithLowDepth(depth, 2), [depth])
 
-  if (loading) return <p className="text-gray-400">Carregando...</p>
+  if (loading && !players.length) return <PageLoader />
 
   return (
     <div className="space-y-6">

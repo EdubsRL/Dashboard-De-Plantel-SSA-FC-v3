@@ -1,11 +1,35 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, friendlyError } from '../lib/supabase'
+
+const STORAGE_KEY = 'ssafc:selectedPlantelId'
+
+function readSavedId() {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
 
 const PlantelsContext = createContext(null)
 
 export function PlantelsProvider({ children }) {
   const [plantels, setPlantels] = useState([])
-  const [selectedPlantel, setSelectedPlantel] = useState(null)
+  const [selectedPlantel, setSelectedPlantelState] = useState(null)
+
+  // Lembra o último plantel escolhido entre visitas.
+  const setSelectedPlantel = useCallback((value) => {
+    setSelectedPlantelState((current) => {
+      const next = typeof value === 'function' ? value(current) : value
+      try {
+        if (next?.id) localStorage.setItem(STORAGE_KEY, next.id)
+        else localStorage.removeItem(STORAGE_KEY)
+      } catch {
+        /* armazenamento indisponível: ignora */
+      }
+      return next
+    })
+  }, [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -20,8 +44,7 @@ export function PlantelsProvider({ children }) {
         .order('category')
 
       if (err) {
-        setError(err.message)
-        setPlantels([])
+        setError(friendlyError(err))
       } else {
         setPlantels(data || [])
 
@@ -30,16 +53,17 @@ export function PlantelsProvider({ children }) {
             return data.find((p) => p.id === current.id)
           }
 
-          return data?.[0] || null
+          const savedId = readSavedId()
+          return data?.find((p) => p.id === savedId) || data?.[0] || null
         })
       }
     } catch (e) {
-      setError(e.message || 'Erro de conexão')
-      setPlantels([])
+      // Mantém os dados já carregados na tela; apenas sinaliza o erro.
+      setError(friendlyError(e, 'Erro de conexão'))
     }
 
     setLoading(false)
-  }, [])
+  }, [setSelectedPlantel])
 
   useEffect(() => {
     fetchPlantels()
@@ -52,7 +76,7 @@ export function PlantelsProvider({ children }) {
       .select()
       .single()
 
-    if (err) throw err
+    if (err) throw new Error(friendlyError(err))
 
     setPlantels((prev) =>
       [...prev, data].sort((a, b) =>
@@ -73,7 +97,7 @@ export function PlantelsProvider({ children }) {
       .select()
       .single()
 
-    if (err) throw err
+    if (err) throw new Error(friendlyError(err))
 
     setPlantels((prev) =>
       prev.map((p) => (p.id === id ? data : p))
@@ -92,7 +116,7 @@ export function PlantelsProvider({ children }) {
       .delete()
       .eq('id', id)
 
-    if (err) throw err
+    if (err) throw new Error(friendlyError(err))
 
     setPlantels((prev) =>
       prev.filter((p) => p.id !== id)

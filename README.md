@@ -44,3 +44,11 @@ npm run build
 
 ## Cadastro de atletas
 Na criação/edição, apenas **nome** e **data de nascimento** são obrigatórios. A data é digitada no formato **DD/MM/AAAA** e convertida automaticamente para o formato do Supabase. Os demais campos são opcionais e possuem valores padrão.
+
+## Deploy na Vercel
+O arquivo `vercel.json` redireciona todas as rotas para o `index.html`, permitindo recarregar a página ou abrir links diretos (ex.: `/plantel`) sem erro 404.
+
+## Supabase pausado ("TypeError: Failed to fetch")
+Projetos do plano gratuito são **pausados após ~7 dias sem uso** e o endereço `*.supabase.co` deixa de responder. Para reativar: acesse https://supabase.com/dashboard, abra o projeto e clique em **Restore project**.
+
+Para evitar novas pausas, o workflow `.github/workflows/supabase-keepalive.yml` faz uma consulta leve a cada 3 dias. Cadastre os secrets `SUPABASE_URL` e `SUPABASE_ANON_KEY` no GitHub (Settings > Secrets and variables > Actions).

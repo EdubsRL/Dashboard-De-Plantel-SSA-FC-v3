@@ -1,10 +1,14 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
-import Dashboard from './pages/Dashboard'
-import Plantel from './pages/Plantel'
-import Escalacao from './pages/Escalacao'
-import Profundidade from './pages/Profundidade'
-import Relatorios from './pages/Relatorios'
+
+// Carregamento sob demanda: cada página (e bibliotecas pesadas como
+// gráficos, Excel e PDF) só é baixada quando o usuário acessa.
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Plantel = lazy(() => import('./pages/Plantel'))
+const Escalacao = lazy(() => import('./pages/Escalacao'))
+const Profundidade = lazy(() => import('./pages/Profundidade'))
+const Relatorios = lazy(() => import('./pages/Relatorios'))
 
 export default function App() {
   return (

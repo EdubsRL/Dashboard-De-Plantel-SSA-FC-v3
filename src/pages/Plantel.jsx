@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { notify, confirmDialog } from '../lib/notify'
 
 import { usePlayers } from '../context/PlayersContext'
 import { usePlayerFilters } from '../hooks/usePlayerFilters'
@@ -39,7 +40,6 @@ export default function Plantel() {
   const {
     players,
     loading,
-    error,
     createPlayer,
     updatePlayer,
     deletePlayer,
@@ -69,7 +69,7 @@ export default function Plantel() {
 
   const handleEdit = (player) => {
     if (!player?.id) {
-      alert('Não foi possível identificar este atleta.')
+      notify.warning('Não foi possível identificar este atleta.')
       return
     }
 
@@ -84,8 +84,10 @@ export default function Plantel() {
     try {
       if (modal === 'create') {
         await createPlayer(payload)
+        notify.success('Atleta cadastrado com sucesso.')
       } else if (modal?.id) {
         await updatePlayer(modal.id, payload)
+        notify.success('Alterações salvas.')
       } else {
         throw new Error(
           'Não foi possível identificar o atleta.'
@@ -99,7 +101,7 @@ export default function Plantel() {
         err
       )
 
-      alert(
+      notify.error(
         err?.message ||
           'Não foi possível salvar o atleta.'
       )
@@ -112,7 +114,7 @@ export default function Plantel() {
 
   const handleDelete = async (id) => {
     if (!id) {
-      alert(
+      notify.warning(
         'Não foi possível identificar o atleta.'
       )
       return
@@ -125,8 +127,9 @@ export default function Plantel() {
     const nome =
       player?.name || 'este atleta'
 
-    const confirmed = window.confirm(
-      `Tem certeza que deseja excluir "${nome}"?\n\nEssa ação não poderá ser desfeita.`
+    const confirmed = await confirmDialog(
+      `Tem certeza que deseja excluir "${nome}"?\n\nEssa ação não poderá ser desfeita.`,
+      { title: 'Excluir atleta', confirmLabel: 'Excluir' }
     )
 
     if (!confirmed) {
@@ -138,16 +141,14 @@ export default function Plantel() {
 
       await deletePlayer(id)
 
-      // Atualiza a lista imediatamente caso
-      // o contexto não tenha atualizado o estado.
-      await fetchPlayers?.()
+      notify.success(`${nome} foi excluído.`)
     } catch (err) {
       console.error(
         'Erro ao excluir atleta:',
         err
       )
 
-      alert(
+      notify.error(
         err?.message ||
           'Não foi possível excluir o atleta.'
       )
@@ -209,7 +210,7 @@ export default function Plantel() {
         created += 1
       }
 
-      alert(
+      notify.success(
         `${created} atleta(s) importado(s) com sucesso.`
       )
 
@@ -220,7 +221,7 @@ export default function Plantel() {
         err
       )
 
-      alert(
+      notify.error(
         err?.message ||
           'Erro ao importar atletas pelo Excel.'
       )
@@ -658,34 +659,6 @@ export default function Plantel() {
         />
 
       </div>
-
-      {/* =====================================================
-          ERRO
-      ===================================================== */}
-
-      {error && (
-        <div className="rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-300 flex items-start justify-between gap-3">
-
-          <div>
-            <strong className="font-semibold">
-              Erro ao carregar atletas
-            </strong>
-
-            <p className="mt-1">
-              {error}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="shrink-0 text-xs underline hover:no-underline"
-          >
-            Tentar novamente
-          </button>
-
-        </div>
-      )}
 
       {/* =====================================================
           DESKTOP

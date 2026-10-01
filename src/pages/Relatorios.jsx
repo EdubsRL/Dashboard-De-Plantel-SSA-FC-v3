@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { notify } from '../lib/notify'
 import { usePlayers } from '../context/PlayersContext'
 import { useLineups } from '../context/LineupsContext'
 import { usePlantels } from '../context/PlantelsContext'
@@ -109,7 +110,7 @@ export default function Relatorios() {
                   playersMap
                 )
               } catch (error) {
-                alert(
+                notify.error(
                   error.message ||
                     'Erro ao carregar a escalação.'
                 )

@@ -6,10 +6,15 @@ import {
   useCallback,
 } from 'react'
 
-import { supabase } from '../lib/supabase'
+import { supabase, friendlyError } from '../lib/supabase'
 import { usePlantels } from './PlantelsContext'
 
 const PlayersContext = createContext(null)
+
+const sortByName = (list) =>
+  [...list].sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR')
+  )
 
 export function PlayersProvider({ children }) {
   const { selectedPlantel } = usePlantels()
@@ -32,136 +37,54 @@ export function PlayersProvider({ children }) {
     setLoading(true)
     setError(null)
 
-    console.log(
-      '🔎 Buscando atletas do plantel:',
-      selectedPlantel.id
-    )
-
     try {
-      const response = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('players')
         .select('*')
         .eq('plantel_id', selectedPlantel.id)
         .order('name', { ascending: true })
 
-      console.log('📦 Resposta do Supabase:', response)
-
-      const { data, error: supabaseError } = response
-
-      if (supabaseError) {
-        console.error(
-          '❌ ERRO SUPABASE:',
-          supabaseError
-        )
-
-        const mensagem = [
-          supabaseError.message,
-          supabaseError.details,
-          supabaseError.hint,
-          supabaseError.code
-            ? `Código: ${supabaseError.code}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(' | ')
-
-        setError(
-          mensagem ||
-            'Erro desconhecido ao consultar o banco.'
-        )
-
-        setPlayers([])
-        return
-      }
-
-      console.log(
-        '✅ Atletas encontrados:',
-        data
-      )
+      if (supabaseError) throw supabaseError
 
       setPlayers(data || [])
     } catch (err) {
-      console.error(
-        '❌ ERRO DE CONEXÃO:',
-        err
-      )
-
-      setError(
-        err?.message ||
-          'Não foi possível conectar ao banco de dados.'
-      )
-
-      setPlayers([])
+      console.error('Erro ao carregar atletas:', err)
+      setError(friendlyError(err, 'Não foi possível carregar os atletas.'))
+      // Não limpamos a lista: se havia dados na tela, eles continuam visíveis.
     } finally {
       setLoading(false)
     }
   }, [selectedPlantel?.id])
 
-  // ==========================================
-  // CARREGAR ATLETAS
-  // ==========================================
+  // Ao trocar de plantel, limpa a lista anterior para não misturar dados.
   useEffect(() => {
+    setPlayers([])
     fetchPlayers()
   }, [fetchPlayers])
+
+  const requirePlantel = () => {
+    if (!selectedPlantel?.id) {
+      throw new Error('Nenhum plantel selecionado.')
+    }
+  }
 
   // ==========================================
   // CRIAR ATLETA
   // ==========================================
   const createPlayer = async (payload) => {
-    if (!selectedPlantel?.id) {
-      throw new Error(
-        'Nenhum plantel selecionado.'
-      )
-    }
+    requirePlantel()
 
-    setError(null)
-
-    const playerPayload = {
-      ...payload,
-      plantel_id: selectedPlantel.id,
-    }
-
-    console.log(
-      '➕ Criando atleta:',
-      playerPayload
-    )
-
-    const { data, error: supabaseError } =
-      await supabase
-        .from('players')
-        .insert([playerPayload])
-        .select()
-        .single()
+    const { data, error: supabaseError } = await supabase
+      .from('players')
+      .insert([{ ...payload, plantel_id: selectedPlantel.id }])
+      .select()
+      .single()
 
     if (supabaseError) {
-      console.error(
-        '❌ Erro ao criar atleta:',
-        supabaseError
-      )
-
-      throw new Error(
-        [
-          supabaseError.message,
-          supabaseError.details,
-          supabaseError.hint,
-          supabaseError.code
-            ? `Código: ${supabaseError.code}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(' | ')
-      )
+      throw new Error(friendlyError(supabaseError, 'Não foi possível criar o atleta.'))
     }
 
-    setPlayers((prev) =>
-      [...prev, data].sort((a, b) =>
-        String(a.name || '').localeCompare(
-          String(b.name || ''),
-          'pt-BR'
-        )
-      )
-    )
-
+    setPlayers((prev) => sortByName([...prev, data]))
     return data
   }
 
@@ -169,63 +92,22 @@ export function PlayersProvider({ children }) {
   // EDITAR ATLETA
   // ==========================================
   const updatePlayer = async (id, payload) => {
-    if (!selectedPlantel?.id) {
-      throw new Error(
-        'Nenhum plantel selecionado.'
-      )
-    }
+    requirePlantel()
+    if (!id) throw new Error('ID do atleta não informado.')
 
-    if (!id) {
-      throw new Error(
-        'ID do atleta não informado.'
-      )
-    }
-
-    setError(null)
-
-    console.log(
-      '✏️ Editando atleta:',
-      id,
-      payload
-    )
-
-    const { data, error: supabaseError } =
-      await supabase
-        .from('players')
-        .update(payload)
-        .eq('id', id)
-        .eq('plantel_id', selectedPlantel.id)
-        .select()
-        .single()
+    const { data, error: supabaseError } = await supabase
+      .from('players')
+      .update(payload)
+      .eq('id', id)
+      .eq('plantel_id', selectedPlantel.id)
+      .select()
+      .single()
 
     if (supabaseError) {
-      console.error(
-        '❌ Erro ao editar atleta:',
-        supabaseError
-      )
-
-      throw new Error(
-        [
-          supabaseError.message,
-          supabaseError.details,
-          supabaseError.hint,
-          supabaseError.code
-            ? `Código: ${supabaseError.code}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(' | ')
-      )
+      throw new Error(friendlyError(supabaseError, 'Não foi possível salvar o atleta.'))
     }
 
-    setPlayers((prev) =>
-      prev.map((player) =>
-        player.id === id
-          ? data
-          : player
-      )
-    )
-
+    setPlayers((prev) => sortByName(prev.map((p) => (p.id === id ? data : p))))
     return data
   }
 
@@ -233,61 +115,20 @@ export function PlayersProvider({ children }) {
   // EXCLUIR ATLETA
   // ==========================================
   const deletePlayer = async (id) => {
-    if (!selectedPlantel?.id) {
-      throw new Error(
-        'Nenhum plantel selecionado.'
-      )
-    }
+    requirePlantel()
+    if (!id) throw new Error('ID do atleta não informado.')
 
-    if (!id) {
-      throw new Error(
-        'ID do atleta não informado.'
-      )
-    }
-
-    setError(null)
-
-    console.log(
-      '🗑️ Excluindo atleta:',
-      id
-    )
-
-    const { error: supabaseError } =
-      await supabase
-        .from('players')
-        .delete()
-        .eq('id', id)
-        .eq('plantel_id', selectedPlantel.id)
+    const { error: supabaseError } = await supabase
+      .from('players')
+      .delete()
+      .eq('id', id)
+      .eq('plantel_id', selectedPlantel.id)
 
     if (supabaseError) {
-      console.error(
-        '❌ Erro ao excluir atleta:',
-        supabaseError
-      )
-
-      throw new Error(
-        [
-          supabaseError.message,
-          supabaseError.details,
-          supabaseError.hint,
-          supabaseError.code
-            ? `Código: ${supabaseError.code}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(' | ')
-      )
+      throw new Error(friendlyError(supabaseError, 'Não foi possível excluir o atleta.'))
     }
 
-    setPlayers((prev) =>
-      prev.filter(
-        (player) => player.id !== id
-      )
-    )
-
-    console.log(
-      '✅ Atleta excluído com sucesso'
-    )
+    setPlayers((prev) => prev.filter((p) => p.id !== id))
   }
 
   return (
@@ -308,15 +149,9 @@ export function PlayersProvider({ children }) {
 }
 
 export function usePlayers() {
-  const context = useContext(
-    PlayersContext
-  )
-
+  const context = useContext(PlayersContext)
   if (!context) {
-    throw new Error(
-      'usePlayers deve ser usado dentro de PlayersProvider'
-    )
+    throw new Error('usePlayers deve ser usado dentro de PlayersProvider')
   }
-
   return context
 }

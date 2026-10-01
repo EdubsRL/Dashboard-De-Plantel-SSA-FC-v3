@@ -5,6 +5,7 @@ import App from './App'
 import { PlayersProvider } from './context/PlayersContext'
 import { PlantelsProvider } from './context/PlantelsContext'
 import { LineupsProvider } from './context/LineupsContext'
+import Toaster from './components/feedback/Toaster'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <PlayersProvider>
           <LineupsProvider>
             <App />
+            <Toaster />
           </LineupsProvider>
         </PlayersProvider>
       </PlantelsProvider>

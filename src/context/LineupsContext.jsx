@@ -6,7 +6,7 @@ import {
   useCallback,
 } from 'react'
 
-import { supabase } from '../lib/supabase'
+import { supabase, friendlyError } from '../lib/supabase'
 import { usePlantels } from './PlantelsContext'
 
 const LineupsContext =
@@ -65,7 +65,7 @@ export function LineupsProvider({
         .single()
 
       if (lineupError) {
-        throw lineupError
+        throw new Error(friendlyError(lineupError))
       }
 
       const {
@@ -82,7 +82,7 @@ export function LineupsProvider({
         )
 
       if (slotsError) {
-        throw slotsError
+        throw new Error(friendlyError(slotsError))
       }
 
       const complete = {
@@ -139,7 +139,7 @@ export function LineupsProvider({
             )
 
           if (error) {
-            throw error
+            throw new Error(friendlyError(error))
           }
 
           const list =
@@ -281,7 +281,7 @@ export function LineupsProvider({
         )
 
       if (resetError) {
-        throw resetError
+        throw new Error(friendlyError(resetError))
       }
     }
 
@@ -304,7 +304,7 @@ export function LineupsProvider({
       .single()
 
     if (error) {
-      throw error
+      throw new Error(friendlyError(error))
     }
 
     /*
@@ -387,7 +387,7 @@ export function LineupsProvider({
           )
 
         if (resetError) {
-          throw resetError
+          throw new Error(friendlyError(resetError))
         }
       }
 
@@ -409,7 +409,7 @@ export function LineupsProvider({
         .single()
 
       if (error) {
-        throw error
+        throw new Error(friendlyError(error))
       }
 
       setLineups(
@@ -507,7 +507,7 @@ export function LineupsProvider({
       .single()
 
     if (lineupError) {
-      throw lineupError
+      throw new Error(friendlyError(lineupError))
     }
 
     if (!lineup) {
@@ -531,7 +531,7 @@ export function LineupsProvider({
       )
 
     if (deleteError) {
-      throw deleteError
+      throw new Error(friendlyError(deleteError))
     }
 
     /*
@@ -579,7 +579,7 @@ export function LineupsProvider({
         .insert(rows)
 
       if (insertError) {
-        throw insertError
+        throw new Error(friendlyError(insertError))
       }
     }
 
@@ -631,7 +631,7 @@ export function LineupsProvider({
       )
 
     if (error) {
-      throw error
+      throw new Error(friendlyError(error))
     }
 
     setLineups(
