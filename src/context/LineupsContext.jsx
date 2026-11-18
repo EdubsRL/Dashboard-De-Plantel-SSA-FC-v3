@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from 'react'
 
 import { supabase, friendlyError } from '../lib/supabase'
@@ -652,9 +653,10 @@ export function LineupsProvider({
     )
   }
 
-  return (
-    <LineupsContext.Provider
-      value={{
+  // Valor memorizado: evita re-renderizar todas as telas que usam
+  // este contexto quando nada relevante mudou.
+  const value = useMemo(
+    () => ({
         lineups,
         currentLineup,
         setCurrentLineup,
@@ -665,8 +667,14 @@ export function LineupsProvider({
         updateLineupMeta,
         saveSlots,
         deleteLineup,
-      }}
-    >
+      }),
+    // As funções acima só dependem destes valores.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lineups, currentLineup, loading, fetchLineups, loadLineupData, selectedPlantel?.id]
+  )
+
+  return (
+    <LineupsContext.Provider value={value}>
       {children}
     </LineupsContext.Provider>
   )

@@ -1,9 +1,31 @@
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
+import { notify } from '../lib/notify'
 
-export function exportPlayersPDF(players, title = 'Plantel') {
+// Bibliotecas pesadas (PDF ~350 KB, Excel ~400 KB) são carregadas só
+// quando o usuário realmente exporta algo, deixando as páginas mais leves.
+async function loadPdf() {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
+  return { jsPDF, autoTable }
+}
+
+const loadXlsx = () => import('xlsx')
+
+// Envolve a exportação para avisar o usuário se algo falhar
+// (ex.: sem internet para baixar a biblioteca).
+const safe = (fn, label) => async (...args) => {
+  try {
+    return await fn(...args)
+  } catch (err) {
+    console.error(`Erro ao ${label}:`, err)
+    notify.error(`Não foi possível ${label}. Verifique sua conexão e tente novamente.`)
+  }
+}
+
+export const exportPlayersPDF = safe(async (players, title = 'Plantel') => {
+  const { jsPDF, autoTable } = await loadPdf()
   const doc = new jsPDF()
   doc.setFontSize(16)
   doc.text(title, 14, 18)
@@ -20,9 +42,10 @@ export function exportPlayersPDF(players, title = 'Plantel') {
     styles: { fontSize: 7 },
   })
   doc.save(`${title.replace(/\s+/g, '_').toLowerCase()}.pdf`)
-}
+}, 'gerar o PDF')
 
-export function exportLineupPDF(lineup, slots, playersMap) {
+export const exportLineupPDF = safe(async (lineup, slots, playersMap = {}) => {
+  const { jsPDF, autoTable } = await loadPdf()
   const doc = new jsPDF()
   doc.setFontSize(16)
   doc.text(`Escalação: ${lineup.name}`, 14, 18)
@@ -64,9 +87,10 @@ export function exportLineupPDF(lineup, slots, playersMap) {
     })
   }
   doc.save(`escalacao_${lineup.name.replace(/\s+/g, '_').toLowerCase()}.pdf`)
-}
+}, 'gerar o PDF da escalação')
 
-export function exportPlayersExcel(players, filename = 'plantel.xlsx') {
+export const exportPlayersExcel = safe(async (players, filename = 'plantel.xlsx') => {
+  const XLSX = await loadXlsx()
   const rows = (players || []).map((p) => ({
     Nome: p.name,
     'Data de nascimento': p.birth_date,
@@ -82,9 +106,10 @@ export function exportPlayersExcel(players, filename = 'plantel.xlsx') {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Plantel')
   XLSX.writeFile(wb, filename)
-}
+}, 'exportar o Excel')
 
-export function downloadPlayerTemplate() {
+export const downloadPlayerTemplate = safe(async () => {
+  const XLSX = await loadXlsx()
   const rows = [{
     Nome: 'Exemplo',
     'Data de nascimento': '2012-01-15',
@@ -100,4 +125,4 @@ export function downloadPlayerTemplate() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Plantel')
   XLSX.writeFile(wb, 'modelo_importacao_plantel.xlsx')
-}
+}, 'baixar o modelo')

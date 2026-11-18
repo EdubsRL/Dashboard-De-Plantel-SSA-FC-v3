@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, friendlyError } from '../lib/supabase'
 
 const STORAGE_KEY = 'ssafc:selectedPlantelId'
@@ -127,9 +127,10 @@ export function PlantelsProvider({ children }) {
     )
   }
 
-  return (
-    <PlantelsContext.Provider
-      value={{
+  // Valor memorizado: evita re-renderizar todas as telas que usam
+  // este contexto quando nada relevante mudou.
+  const value = useMemo(
+    () => ({
         plantels,
         selectedPlantel,
         setSelectedPlantel,
@@ -139,8 +140,14 @@ export function PlantelsProvider({ children }) {
         createPlantel,
         updatePlantel,
         deletePlantel,
-      }}
-    >
+      }),
+    // As funções acima só dependem destes valores.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [plantels, selectedPlantel, loading, error, fetchPlantels, setSelectedPlantel]
+  )
+
+  return (
+    <PlantelsContext.Provider value={value}>
       {children}
     </PlantelsContext.Provider>
   )

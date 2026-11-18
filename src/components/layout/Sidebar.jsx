@@ -77,7 +77,10 @@ function SidebarContent({
 
       <div className="brand-block">
         <img
-          src="/ssa-fc-logo.png"
+          src="/ssa-fc-logo.webp"
+          width="48"
+          height="48"
+          decoding="async"
           alt="SSA FC"
           className="brand-logo"
         />

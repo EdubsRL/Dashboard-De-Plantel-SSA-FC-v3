@@ -18,9 +18,20 @@ if (import.meta.env.DEV && supabaseConfigError) {
   console.warn('[Supabase]', supabaseConfigError)
 }
 
+// Evita que uma requisição fique "carregando para sempre" em redes ruins.
+const REQUEST_TIMEOUT_MS = 20000
+
+function fetchWithTimeout(input, init = {}) {
+  if (init.signal) return fetch(input, init) // respeita cancelamentos próprios
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 export const supabase = createClient(
   supabaseUrl || 'https://invalid.supabase.co',
-  supabaseAnonKey || 'invalid-key'
+  supabaseAnonKey || 'invalid-key',
+  { global: { fetch: fetchWithTimeout } }
 )
 
 /**
@@ -43,6 +54,10 @@ export function friendlyError(err, fallback = 'Ocorreu um erro inesperado.') {
     return typeof navigator !== 'undefined' && navigator.onLine === false
       ? 'Você está sem conexão com a internet. Verifique sua rede e tente novamente.'
       : 'Não foi possível conectar ao banco de dados. O servidor pode estar fora do ar ou pausado. Tente novamente em instantes.'
+  }
+
+  if (err.name === 'AbortError' || msg.includes('aborted')) {
+    return 'O servidor demorou demais para responder. Tente novamente.'
   }
 
   if (err.code === '42501' || msg.includes('row-level security')) {

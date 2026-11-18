@@ -38,10 +38,11 @@ export default function Dashboard() {
       value: players.filter((p) => p.status === s).length,
     }))
     const registered = players.filter((p) => p.is_registered).length
+    const statusCount = Object.fromEntries(byStatus.map((s) => [s.name, s.value]))
     const latest = [...players]
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
       .slice(0, 8)
-    return { byPos, byFoot, byRating, byStatus, latest, registered }
+    return { byPos, byFoot, byRating, byStatus, latest, registered, statusCount }
   }, [players])
 
   // Enquanto carrega pela primeira vez, mostra esqueleto em vez de zeros.
@@ -66,14 +67,14 @@ export default function Dashboard() {
           <p className="text-gray-400 text-sm">Visão geral do plantel atual</p>
         </div>
         <div className="rounded-xl border border-graphite-800 bg-graphite-900 p-2.5 sm:p-3">
-          <img src="/ssa-fc-logo.png" alt="SSA FC" className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg" />
+          <img src="/ssa-fc-logo.webp" alt="SSA FC" width="80" height="80" decoding="async" className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg" />
         </div>
       </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="card p-4"><p className="text-gray-400 text-xs sm:text-sm">Total de atletas</p><p className="text-2xl sm:text-3xl font-bold text-pitch-400 mt-1">{players.length}</p></div>
         {STATUSES.map((s) => (
-          <div key={s} className="card p-4"><p className="text-gray-400 text-xs sm:text-sm">{s}</p><p className="text-2xl font-semibold mt-1">{players.filter((p) => p.status === s).length}</p></div>
+          <div key={s} className="card p-4"><p className="text-gray-400 text-xs sm:text-sm">{s}</p><p className="text-2xl font-semibold mt-1">{stats.statusCount[s] ?? 0}</p></div>
         ))}
         <div className="card p-4"><p className="text-gray-400 text-xs sm:text-sm">Inscritos</p><p className="text-2xl font-semibold text-pitch-300 mt-1">{stats.registered}</p></div>
       </div>

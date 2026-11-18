@@ -1,8 +1,9 @@
-import * as XLSX from 'xlsx'
 
 const normalize = (value) => String(value ?? '').trim()
 
-export function parsePlayersExcel(file) {
+export async function parsePlayersExcel(file) {
+  // Carrega a biblioteca de Excel só no momento da importação.
+  const XLSX = await import('xlsx')
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (event) => {

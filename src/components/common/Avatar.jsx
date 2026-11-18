@@ -20,6 +20,8 @@ export default function Avatar({ name, photoUrl, size = 'sm', className = '' }) 
       <img
         src={photoUrl}
         alt={name}
+        loading="lazy"
+        decoding="async"
         className={`${sizeClass} rounded-full object-cover shrink-0 border border-graphite-700 ${className}`}
       />
     )

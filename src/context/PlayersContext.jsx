@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from 'react'
 
 import { supabase, friendlyError } from '../lib/supabase'
@@ -17,7 +18,7 @@ const sortByName = (list) =>
   )
 
 export function PlayersProvider({ children }) {
-  const { selectedPlantel } = usePlantels()
+  const { selectedPlantel, loading: plantelsLoading, error: plantelsError } = usePlantels()
 
   const [players, setPlayers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -131,18 +132,28 @@ export function PlayersProvider({ children }) {
     setPlayers((prev) => prev.filter((p) => p.id !== id))
   }
 
-  return (
-    <PlayersContext.Provider
-      value={{
+  // Valor memorizado: evita re-renderizar todas as telas que usam
+  // este contexto quando nada relevante mudou.
+  const value = useMemo(
+    () => ({
         players,
-        loading,
-        error,
+        // Enquanto os plantéis carregam, também estamos "carregando"
+        // (evita mostrar 0 atletas por alguns segundos).
+        loading: loading || plantelsLoading,
+        // Falha ao carregar plantéis também impede carregar os atletas.
+        error: error || plantelsError,
         fetchPlayers,
         createPlayer,
         updatePlayer,
         deletePlayer,
-      }}
-    >
+      }),
+    // As funções acima só dependem destes valores.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [players, loading, plantelsLoading, error, plantelsError, fetchPlayers, selectedPlantel?.id]
+  )
+
+  return (
+    <PlayersContext.Provider value={value}>
       {children}
     </PlayersContext.Provider>
   )
